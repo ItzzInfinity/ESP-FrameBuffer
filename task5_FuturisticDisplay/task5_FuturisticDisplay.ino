@@ -42,25 +42,27 @@
 DHT dht(DHT_PIN, DHT_TYPE);
 
 // ============================================================================
-// COLORS (RGB565)
+// COLORS (RGB565) - Cyberpunk HUD Theme
 // ============================================================================
 
-#define COLOR_BLACK      0x0000
-#define COLOR_WHITE      0xFFFF
-#define COLOR_DARK_GRAY  0x2104
-#define COLOR_GRAY       0x4208
-#define COLOR_LIGHT_GRAY 0xC618
+#define COLOR_BLACK        0x0000   // Pure black background
+#define COLOR_WHITE        0xFFFF
+#define COLOR_DARK_GRAY    0x2104
+#define COLOR_GRAY         0x4208
+#define COLOR_LIGHT_GRAY   0xC618
 
 // Temperature colors (dynamic)
-#define COLOR_COLD       0x001F  // Deep blue
-#define COLOR_COOL       0x041F  // Blue
-#define COLOR_COMFORT    0x07E0  // Green
-#define COLOR_WARM       0xFE00  // Orange
-#define COLOR_HOT        0xF800  // Red
+#define COLOR_COLD         0x001F   // Deep blue (< 15°C)
+#define COLOR_COOL         0x041F   // Blue (15-18°C)
+#define COLOR_COMFORT      0x07E0   // Neon green (18-24°C)
+#define COLOR_WARM         0xFE00   // Neon orange (24-30°C)
+#define COLOR_HOT          0xF800   // Bright red (> 30°C)
 
 // Accent colors
-#define COLOR_CYAN       0x07FF
-#define COLOR_ORANGE     0xFD20
+#define COLOR_HUMIDITY     0x07FF   // Cyan (neon water)
+#define COLOR_ORANGE       0xFD20
+#define COLOR_GRID         0x0410   // Subtle divider color
+#define COLOR_ACCENT_MAG   0xF81F   // Magenta corner accents
 
 // ============================================================================
 // PIN DEFINITIONS (Board-specific)
@@ -172,37 +174,9 @@ void readAndUpdateDHT() {
 }
 
 float calculateFeelsLike(float temp, float humidity) {
-  // Heat index formula (Steadman)
-  
-  if (temp < 26.7) {
-    return temp;
-  }
-  
-  if (humidity < 0 || humidity > 100) {
-    return temp;
-  }
-  
-  double T = temp;
-  double RH = humidity;
-  
-  double c1 = -42.379;
-  double c2 = 2.04901523;
-  double c3 = 10.14333127;
-  double c4 = -0.22475541;
-  double c5 = -0.00683783;
-  double c6 = -0.05481717;
-  double c7 = 0.00122874;
-  double c8 = 0.00085282;
-  double c9 = -0.00000199;
-  
-  double HI = c1 + c2 * T + c3 * RH + c4 * T * RH + c5 * T * T
-            + c6 * RH * RH + c7 * T * T * RH + c8 * T * RH * RH 
-            + c9 * T * T * RH * RH;
-  
-  if (HI < T) return T;
-  if (HI > 60) return 60.0;
-  
-  return (float)HI;
+  // Use DHT11 library's built-in heat index calculation
+  // false = not using Fahrenheit (using Celsius)
+  return dht.computeHeatIndex(temp, humidity, false);
 }
 
 // ============================================================================
@@ -219,24 +193,110 @@ uint16_t getTempColor(float temp) {
 }
 
 // ============================================================================
+// ICON DRAWING FUNCTIONS
+// ============================================================================
+
+void drawThermometerIcon(int x, int y, uint16_t color) {
+  // Frame
+  tft.drawRect(x, y, 15, 15, color);
+  
+  // Bulb (top 2 rows of frame)
+  tft.fillRect(x + 1, y + 1, 13, 3, color);
+  
+  // Stem (vertical line down center)
+  tft.drawLine(x + 7, y + 4, x + 7, y + 12, color);
+  tft.drawLine(x + 8, y + 4, x + 8, y + 12, color);
+  
+  // Mercury (filled block at bottom)
+  tft.fillRect(x + 1, y + 13, 13, 2, color);
+}
+
+void drawWaterDropletIcon(int x, int y, uint16_t color) {
+  // Frame
+  tft.drawRect(x, y, 15, 15, color);
+  
+  // Droplet outline (diamond shape)
+  // Left diagonal
+  tft.drawLine(x + 7, y + 2, x + 4, y + 7, color);
+  // Right diagonal
+  tft.drawLine(x + 8, y + 2, x + 11, y + 7, color);
+  // Bottom left
+  tft.drawLine(x + 4, y + 7, x + 7, y + 13, color);
+  // Bottom right
+  tft.drawLine(x + 11, y + 7, x + 7, y + 13, color);
+  
+  // Fill droplet
+  tft.fillRect(x + 5, y + 5, 5, 7, color);
+}
+
+void drawHeatIcon(int x, int y, uint16_t color) {
+  // Frame
+  tft.drawRect(x, y, 15, 15, color);
+  
+  // Center point
+  tft.fillRect(x + 6, y + 6, 3, 3, color);
+  
+  // Cross (vertical + horizontal)
+  tft.drawLine(x + 7, y + 2, x + 7, y + 12, color);   // Vertical
+  tft.drawLine(x + 2, y + 7, x + 12, y + 7, color);   // Horizontal
+  
+  // Diagonal points (X shape)
+  tft.drawLine(x + 4, y + 4, x + 10, y + 10, color);  // \
+  tft.drawLine(x + 10, y + 4, x + 4, y + 10, color);  // /
+}
+
+void drawRegionBorder(int region_y_start, int region_y_end, uint16_t color) {
+  // Left border line (accent)
+  tft.drawLine(2, region_y_start, 2, region_y_end, color);
+  
+  // Bottom divider line (separates from next region)
+  tft.drawLine(0, region_y_end - 1, 159, region_y_end - 1, COLOR_GRID);
+}
+
+void drawCornerAccents() {
+  // Top-left corner
+  tft.drawLine(0, 0, 8, 0, COLOR_ACCENT_MAG);      // Horizontal
+  tft.drawLine(0, 0, 0, 8, COLOR_ACCENT_MAG);      // Vertical
+  
+  // Top-right corner
+  tft.drawLine(159, 0, 151, 0, COLOR_ACCENT_MAG);
+  tft.drawLine(159, 0, 159, 8, COLOR_ACCENT_MAG);
+  
+  // Bottom-left corner
+  tft.drawLine(0, 127, 8, 127, COLOR_ACCENT_MAG);
+  tft.drawLine(0, 127, 0, 119, COLOR_ACCENT_MAG);
+  
+  // Bottom-right corner
+  tft.drawLine(159, 127, 151, 127, COLOR_ACCENT_MAG);
+  tft.drawLine(159, 127, 159, 119, COLOR_ACCENT_MAG);
+}
+
+// ============================================================================
 // DISPLAY FUNCTIONS
 // ============================================================================
 
 void drawInitialUI() {
+  // Fill screen with pure black
   tft.fillScreen(COLOR_BLACK);
   
-  // Draw subtle top border
-  tft.drawLine(0, 0, 160, 0, COLOR_GRAY);
+  // ===== DRAW ICONS & SECTION BORDERS =====
   
-  // Title
-  tft.setCursor(5, 8);
-  tft.setTextColor(COLOR_LIGHT_GRAY);
-  tft.setTextSize(1);
-  tft.println("CLIMATE MONITOR");
+  // REGION 1: TEMPERATURE (y: 0-42)
+  drawThermometerIcon(10, 8, COLOR_COLD);
+  drawRegionBorder(0, 42, COLOR_COLD);
   
-  tft.drawLine(0, 20, 160, 20, COLOR_DARK_GRAY);
+  // REGION 2: HUMIDITY (y: 42-84)
+  drawWaterDropletIcon(10, 50, COLOR_HUMIDITY);
+  drawRegionBorder(42, 84, COLOR_HUMIDITY);
   
-  // Placeholder display
+  // REGION 3: FEELS LIKE (y: 84-128)
+  drawHeatIcon(10, 92, COLOR_COLD);
+  drawRegionBorder(84, 128, COLOR_COLD);
+  
+  // ===== DRAW CORNER ACCENTS (Optional HUD feel) =====
+  drawCornerAccents();
+  
+  // ===== PLACEHOLDER VALUES =====
   updateTemperatureDisplay(0);
   updateHumidityDisplay(0);
   updateFeelsLikeDisplay(0);
@@ -245,97 +305,84 @@ void drawInitialUI() {
 void updateTemperatureDisplay(float temp) {
   uint16_t color = getTempColor(temp);
   
-  // Clear temperature region (region 1: rows 25-65)
-  tft.fillRect(0, 25, 160, 42, COLOR_BLACK);
+  // Clear temperature region (rows 0-42)
+  tft.fillRect(0, 0, 160, 42, COLOR_BLACK);
   
-  // Draw temperature label
-  tft.setCursor(8, 28);
-  tft.setTextColor(COLOR_LIGHT_GRAY);
-  tft.setTextSize(1);
-  tft.print("TEMPERATURE");
+  // Redraw borders and icon
+  drawThermometerIcon(10, 8, color);
+  drawRegionBorder(0, 42, color);
   
-  // Draw large temperature value
-  tft.setCursor(18, 40);
+  // Draw large temperature value (text size 3)
+  tft.setCursor(35, 5);
   tft.setTextColor(color);
-  tft.setTextSize(4);
+  tft.setTextSize(3);
   tft.printf("%.1f", temp);
   
-  // Draw degree symbol and unit
-  tft.setCursor(128, 42);
+  // Draw degree symbol (small text size 2)
+  tft.setCursor(125, 8);
   tft.setTextColor(color);
   tft.setTextSize(2);
-  tft.print("o");
-  
-  tft.setCursor(145, 48);
-  tft.setTextColor(color);
-  tft.setTextSize(1);
   tft.print("C");
 }
 
 void updateHumidityDisplay(float humidity) {
-  // Clear humidity region (region 2: rows 68-100)
-  tft.fillRect(0, 68, 160, 30, COLOR_BLACK);
+  // Clear humidity region (rows 42-84)
+  tft.fillRect(0, 42, 160, 42, COLOR_BLACK);
   
-  // Draw humidity label
-  tft.setCursor(8, 70);
-  tft.setTextColor(COLOR_LIGHT_GRAY);
-  tft.setTextSize(1);
-  tft.print("HUMIDITY");
+  // Redraw borders and icon
+  drawWaterDropletIcon(10, 50, COLOR_HUMIDITY);
+  drawRegionBorder(42, 84, COLOR_HUMIDITY);
   
-  // Draw humidity value
-  tft.setCursor(70, 73);
-  tft.setTextColor(COLOR_CYAN);
+  // Draw large humidity value (text size 3)
+  tft.setCursor(35, 47);
+  tft.setTextColor(COLOR_HUMIDITY);
   tft.setTextSize(3);
   tft.printf("%.0f", humidity);
   
-  tft.setCursor(130, 76);
-  tft.setTextColor(COLOR_CYAN);
-  tft.setTextSize(1);
+  // Draw percent symbol (text size 2)
+  tft.setCursor(130, 50);
+  tft.setTextColor(COLOR_HUMIDITY);
+  tft.setTextSize(2);
   tft.print("%");
-  
-  // Draw humidity bar
-  int bar_width = (int)(humidity / 100.0 * 140);
-  tft.fillRect(8, 92, bar_width, 4, COLOR_CYAN);
-  tft.drawRect(8, 92, 140, 4, COLOR_LIGHT_GRAY);
 }
 
 void updateFeelsLikeDisplay(float feels_like) {
-  // Clear feels-like region (region 3: rows 103-128)
-  tft.fillRect(0, 103, 160, 25, COLOR_BLACK);
+  uint16_t color = getTempColor(feels_like);
   
-  // Draw feels-like label
-  tft.setCursor(8, 105);
-  tft.setTextColor(COLOR_LIGHT_GRAY);
-  tft.setTextSize(1);
-  tft.print("FEELS LIKE");
+  // Clear feels-like region (rows 84-128)
+  tft.fillRect(0, 84, 160, 44, COLOR_BLACK);
   
-  // Draw feels-like value
-  uint16_t fl_color = getTempColor(feels_like);
-  tft.setCursor(65, 110);
-  tft.setTextColor(fl_color);
-  tft.setTextSize(2);
+  // Redraw borders and icon
+  drawHeatIcon(10, 92, color);
+  drawRegionBorder(84, 128, color);
+  
+  // Draw large feels-like value (text size 3)
+  tft.setCursor(35, 89);
+  tft.setTextColor(color);
+  tft.setTextSize(3);
   tft.printf("%.1f", feels_like);
   
-  tft.setCursor(125, 111);
-  tft.setTextColor(fl_color);
-  tft.setTextSize(1);
-  tft.print("oC");
+  // Draw degree symbol (text size 2)
+  tft.setCursor(125, 92);
+  tft.setTextColor(color);
+  tft.setTextSize(2);
+  tft.print("C");
 }
 
 void displaySensorError() {
-  // Clear middle area
-  tft.fillRect(0, 25, 160, 103, COLOR_BLACK);
+  // Clear all regions
+  tft.fillScreen(COLOR_BLACK);
   
   // Error message
-  tft.setCursor(30, 60);
+  tft.setCursor(25, 50);
   tft.setTextColor(COLOR_HOT);
   tft.setTextSize(1);
   tft.println("SENSOR ERROR");
   
-  tft.setCursor(15, 75);
+  tft.setCursor(15, 70);
   tft.setTextColor(COLOR_LIGHT_GRAY);
   tft.setTextSize(1);
-  tft.println("Check DHT11 connection");
+  tft.println("Check DHT11");
 }
 
 // ============================================================================

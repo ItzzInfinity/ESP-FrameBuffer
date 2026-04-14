@@ -15,7 +15,7 @@
 -   Task 1: WIth ESP Just Display anything on the TFT LCD display
 -   Task 2: Display Time and date from internet on the TFT LCD display
     -   Task 2.1: Connect to WiFi and display connection status on TFT LCD display and all available WiFi networks - no need to refresh the whole page each time, just update the relevant section with the new information
--   Task 3: Display the temperature and humidity data & Time from the DHT11 sensor on the TFT LCD display
+-   Task 3: Display the temperature and humidity data from the DHT11 sensor on the TFT LCD display
 -   Task 4: Save the temperature and humidity data to the SD card in CSV format with a timestamp
 -   Task 5: Simple Webserver to download the CSV file from the SD card.
 ## Guidelines

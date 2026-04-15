@@ -16,7 +16,15 @@
 -   Task 2: Display Time and date from internet on the TFT LCD display
     -   Task 2.1: Connect to WiFi and display connection status on TFT LCD display and all available WiFi networks - no need to refresh the whole page each time, just update the relevant section with the new information
 -   Task 3: Display the temperature and humidity data from the DHT11 sensor on the TFT LCD display
--   Task 4: Save the temperature and humidity data to the SD card in CSV format with a timestamp
+    -   Task 3.1: Update the temperature and humidity data every 2 seconds (DHT11 minimum) without refreshing the whole page, just update the relevant section with the new information and fetch date and time from the internet and display it on the TFT LCD display. check previous temp and hum values and only update the display if there is a change to minimize unnecessary updates and reduce flickering. and clock will not have second hand, so update it every minute.
+-   Task 4: Save the temperature and humidity data to the SD card in CSV format with a timestamp. The CSV file should have the following format: "timestamp,temperature,humidity". The timestamp should ISO 8601 format (e.g., "2026-04-17T14:32:45Z"). So it can be easily parsed by other applications.
+    -   **Details**
+        -   1. Display and SD card will share the same bus.
+        -   2. Filename: "data_log.csv".
+        -   3. Display will be in landscape orientation.
+        -   4. Data logging interval: in top of the code.
+        -   5. Handle SD card errors gracefully (e.g., no card, write failure) and display error messages on the TFT LCD display.
+        -   6. Display Temperature, Humidity, and feels like temperature on the TFT LCD display. - refresh only the relevant section when the data changes.
 -   Task 5: Simple Webserver to download the CSV file from the SD card.
 ## Guidelines
 -   The code should be modular and well-documented.

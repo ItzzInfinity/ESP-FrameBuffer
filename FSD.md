@@ -11,21 +11,6 @@
     DHT11 temperature and humidity sensor
 ## Software
     Willing to use the Arduino IDE
-## Tasks to get it working step by step
--   Task 1: WIth ESP Just Display anything on the TFT LCD display
--   Task 2: Display Time and date from internet on the TFT LCD display
-    -   Task 2.1: Connect to WiFi and display connection status on TFT LCD display and all available WiFi networks - no need to refresh the whole page each time, just update the relevant section with the new information
--   Task 3: Display the temperature and humidity data from the DHT11 sensor on the TFT LCD display
-    -   Task 3.1: Update the temperature and humidity data every 2 seconds (DHT11 minimum) without refreshing the whole page, just update the relevant section with the new information and fetch date and time from the internet and display it on the TFT LCD display. check previous temp and hum values and only update the display if there is a change to minimize unnecessary updates and reduce flickering. and clock will not have second hand, so update it every minute.
--   Task 4: Save the temperature and humidity data to the SD card in CSV format with a timestamp. The CSV file should have the following format: "timestamp,temperature,humidity". The timestamp should ISO 8601 format (e.g., "2026-04-17T14:32:45Z"). So it can be easily parsed by other applications.
-    -   **Details**
-        -   1. Display and SD card will share the same bus.
-        -   2. Filename: "data_log.csv".
-        -   3. Display will be in landscape orientation.
-        -   4. Data logging interval: in top of the code.
-        -   5. Handle SD card errors gracefully (e.g., no card, write failure) and display error messages on the TFT LCD display.
-        -   6. Display Temperature, Humidity, and feels like temperature on the TFT LCD display. - refresh only the relevant section when the data changes.
--   Task 5: Simple Webserver to download the CSV file from the SD card.
 ## Guidelines
 -   The code should be modular and well-documented.
 -   at the top of the code, there should be a comment block that describes the purpose of the code, the hardware used, and any libraries required.
@@ -200,3 +185,40 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 | 38 |5V |Power |5V Input (VBUS) |
 | 37 |GND |Ground |Common Ground |
 | 38 |5V |Power |5V Input (VBUS) |
+
+## Tasks to get it working step by step
+-   Task 1: WIth ESP Just Display anything on the TFT LCD display
+-   Task 2: Display Time and date from internet on the TFT LCD display
+    -   Task 2.1: Connect to WiFi and display connection status on TFT LCD display and all available WiFi networks - no need to refresh the whole page each time, just update the relevant section with the new information
+-   Task 3: Display the temperature and humidity data from the DHT11 sensor on the TFT LCD display
+    -   Task 3.1: Update the temperature and humidity data every 2 seconds (DHT11 minimum) without refreshing the whole page, just update the relevant section with the new information and fetch date and time from the internet and display it on the TFT LCD display. check previous temp and hum values and only update the display if there is a change to minimize unnecessary updates and reduce flickering. and clock will not have second hand, so update it every minute.
+-   Task 4: Save the temperature and humidity data to the SD card in CSV format with a timestamp. The CSV file should have the following format: "timestamp,temperature,humidity". The timestamp should ISO 8601 format (e.g., "2026-04-17T14:32:45Z"). So it can be easily parsed by other applications.
+    -   **Details**
+        -   1. Display and SD card will share the same bus.
+        -   2. Filename: "data_log.csv".
+        -   3. Display will be in landscape orientation.
+        -   4. Data logging interval: in top of the code.
+        -   5. Handle SD card errors gracefully (e.g., no card, write failure) and display error messages on the TFT LCD display.
+        -   6. Display Temperature, Humidity, and feels like temperature on the TFT LCD display. - refresh only the relevant section when the data changes.
+    - Task 4.1: check sd card its writable or not and create csv file if it doesn't exist and write header to the csv file. 
+-   Task 5: Create a futuristic Screen for displaying the temperature, humidity, and feels like temperature on the TFT LCD display. The screen should have a modern and sleek design with clear and easy-to-read fonts. The temperature and humidity values should be displayed prominently, with the feels like temperature displayed in a smaller font below. Dont include any SD card related information on the display. This code is only the frame buffer code for the display which will fetch DHT11 info and display it No Internet clock No Wifi and it should update only relevant fields No need to refresh the whole page each time, just update the relevant section with the new information. The design should be visually appealing and easy to understand at a glance.
+-   Task 6: Simple Webserver to download the CSV file from the SD card.
+-   
+
+```
+_________________________________________
+| Temperature                            |
+|                                        |
+|  <ICON><big text>                      |
+|                                        |
+|                                        |
+| Humidity                               |
+|                                        |
+|  <ICON><big text>                      |
+|                                        |
+| Feels Like                             |
+|                                        |
+|  <ICON><big text>                      |
+|________________________________________|
+
+```

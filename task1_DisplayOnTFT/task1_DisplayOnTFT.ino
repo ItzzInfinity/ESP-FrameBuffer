@@ -39,6 +39,19 @@
 #include <SPI.h>
 
 // ============================================================================
+// CUSTOM COLOR DEFINITIONS (Fixed RGB565 Color Order)
+// ============================================================================
+// Some ST7735S displays have color channel swap. These definitions correct it.
+#define COLOR_BLACK   0x0000
+#define COLOR_WHITE   0xFFFF
+#define COLOR_RED     0xF800
+#define COLOR_BLUE    0x001F
+#define COLOR_GREEN   0x07E0
+#define COLOR_CYAN    0x07FF  // Fixed: should be blue + green
+#define COLOR_YELLOW  0xFFE0  // Fixed: should be red + green
+#define COLOR_MAGENTA 0xF81F  // Fixed: should be red + blue
+
+// ============================================================================
 // PIN DEFINITIONS (Board-specific)
 // ============================================================================
 
@@ -93,17 +106,20 @@ void setup() {
   Serial.println("Initializing TFT display...");
   
   // Initialize display with Adafruit_ST7735
-  // Parameters: (width=128, height=160, rotation)
-  tft.initR(INITR_18GREENTAB);  // Initialize with default 18-bit color ST7735S
+  // Try BLACKTAB first for better color accuracy on some ST7735S variants
+  tft.initR(INITR_BLACKTAB);  // Using BLACKTAB for better color rendering
   
   // Set rotation (0=Portrait, 1=Landscape, 2=Portrait-flipped, 3=Landscape-flipped)
-  tft.setRotation(2);
+  tft.setRotation(0);
   
   // Fill screen with black background
-  tft.fillScreen(ST7735_BLACK);
+  tft.fillScreen(COLOR_BLACK);
   
   Serial.println("✓ Display initialized successfully");
   Serial.println("===========================================\n");
+  
+  // Small delay to stabilize display
+  delay(100);
   
   // Draw initial content
   displayStartupScreen();
@@ -127,22 +143,25 @@ void loop() {
  * Displays welcome message and system information on the TFT LCD
  */
 void displayStartupScreen() {
-  // Clear screen
-  tft.fillScreen(ST7735_BLACK);
+  // Define margin to avoid edge pixels
+  int margin = 5;
   
-  // Draw title
-  tft.setCursor(10, 10);
-  tft.setTextColor(ST7735_CYAN);
+  // Clear screen
+  tft.fillScreen(COLOR_BLACK);
+  
+  // Draw title with margin from edges
+  tft.setCursor(margin + 10, margin + 10);
+  tft.setTextColor(COLOR_CYAN);
   tft.setTextSize(2);
   tft.println("espFrame");
   tft.println("Buffer");
   
-  // Draw separator line
-  tft.drawLine(0, 50, 128, 50, ST7735_CYAN);
+  // Draw separator line with margin
+  tft.drawLine(margin, margin + 40, 128 - margin, margin + 40, COLOR_CYAN);
   
   // Draw task information
-  tft.setCursor(5, 60);
-  tft.setTextColor(ST7735_WHITE);
+  tft.setCursor(margin + 5, margin + 50);
+  tft.setTextColor(COLOR_WHITE);
   tft.setTextSize(1);
   tft.println("Task 1: Display");
   tft.println("Status: ACTIVE");
@@ -151,8 +170,8 @@ void displayStartupScreen() {
   drawBackgroundPattern();
   
   // Draw footer with display info
-  tft.setCursor(5, 140);
-  tft.setTextColor(ST7735_MAGENTA);
+  tft.setCursor(margin + 5, 150);
+  tft.setTextColor(COLOR_MAGENTA);
   tft.setTextSize(1);
   tft.println("128x160 ST7735S");
 }
@@ -162,17 +181,20 @@ void displayStartupScreen() {
  * Draws decorative shapes on the display
  */
 void drawBackgroundPattern() {
-  // Draw colored rectangles in corners
-  tft.drawRect(5, 100, 20, 20, ST7735_RED);
-  tft.drawRect(103, 100, 20, 20, ST7735_YELLOW);
+  // Define margin to avoid edge pixels
+  int margin = 5;
   
-  // Draw small circles
-  tft.drawCircle(64, 110, 10, ST7735_GREEN);
+  // Draw colored rectangles with margin spacing
+  tft.drawRect(margin + 5, 95, 20, 20, COLOR_RED);
+  tft.drawRect(128 - margin - 25, 95, 20, 20, COLOR_YELLOW);
   
-  // Draw a simple line pattern
-  for (int i = 0; i < 10; i++) {
-    tft.drawLine(0, 120 + i, 128, 120 + i, ST7735_BLUE);
-    delay(10);  // Optional: create drawing animation effect
+  // Draw small circle in center area
+  tft.drawCircle(64, 105, 10, COLOR_GREEN);
+  
+  // Draw line pattern with margin
+  for (int i = 0; i < 8; i++) {
+    tft.drawLine(margin, 115 + i, 128 - margin, 115 + i, COLOR_BLUE);
+    delay(5);  // Reduced delay for smoother rendering
   }
 }
 

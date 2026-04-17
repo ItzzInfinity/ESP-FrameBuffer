@@ -77,7 +77,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCK, TFT_RST
 
 void setup() {
   Serial.begin(115200);
-  delay(100);
+  delay(2000);
   
   // Log startup information
   Serial.println("\n\n===========================================");
@@ -97,7 +97,7 @@ void setup() {
   tft.initR(INITR_18GREENTAB);  // Initialize with default 18-bit color ST7735S
   
   // Set rotation (0=Portrait, 1=Landscape, 2=Portrait-flipped, 3=Landscape-flipped)
-  tft.setRotation(0);
+  tft.setRotation(2);
   
   // Fill screen with black background
   tft.fillScreen(ST7735_BLACK);

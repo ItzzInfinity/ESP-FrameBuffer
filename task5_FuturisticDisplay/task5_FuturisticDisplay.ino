@@ -42,10 +42,11 @@
 DHT dht(DHT_PIN, DHT_TYPE);
 
 // ============================================================================
-// COLORS (RGB565) - Cyberpunk HUD Theme
+// COLORS (RGB565) - Cyberpunk Dashboard Theme
 // ============================================================================
 
 #define COLOR_BLACK        0x0000   // Pure black background
+#define COLOR_CARD_BG      0x0410   // Very dark blue-gray (card background)
 #define COLOR_WHITE        0xFFFF
 #define COLOR_DARK_GRAY    0x2104
 #define COLOR_GRAY         0x4208
@@ -59,10 +60,10 @@ DHT dht(DHT_PIN, DHT_TYPE);
 #define COLOR_HOT          0xF800   // Bright red (> 30°C)
 
 // Accent colors
-#define COLOR_HUMIDITY     0x07FF   // Cyan (neon water)
+#define COLOR_CYAN         0x07FF   // Bright cyan (primary accent)
 #define COLOR_ORANGE       0xFD20
 #define COLOR_GRID         0x0410   // Subtle divider color
-#define COLOR_ACCENT_MAG   0xF81F   // Magenta corner accents
+#define COLOR_ACCENT       0x07FF   // Cyan (all accents, replaces magenta)
 
 // ============================================================================
 // PIN DEFINITIONS (Board-specific)
@@ -253,22 +254,30 @@ void drawRegionBorder(int region_y_start, int region_y_end, uint16_t color) {
   tft.drawLine(0, region_y_end - 1, 159, region_y_end - 1, COLOR_GRID);
 }
 
+void drawCardFrame(int y_start, int y_end) {
+  // Outer card border (cyan frame)
+  tft.drawLine(0, y_start, 159, y_start, COLOR_CYAN);      // Top border
+  tft.drawLine(0, y_start, 0, y_end, COLOR_CYAN);          // Left border
+  tft.drawLine(0, y_end - 1, 159, y_end - 1, COLOR_CYAN);  // Bottom border
+  tft.drawLine(159, y_start, 159, y_end, COLOR_CYAN);      // Right border
+}
+
 void drawCornerAccents() {
   // Top-left corner
-  tft.drawLine(0, 0, 8, 0, COLOR_ACCENT_MAG);      // Horizontal
-  tft.drawLine(0, 0, 0, 8, COLOR_ACCENT_MAG);      // Vertical
+  tft.drawLine(0, 0, 8, 0, COLOR_CYAN);      // Horizontal
+  tft.drawLine(0, 0, 0, 8, COLOR_CYAN);      // Vertical
   
   // Top-right corner
-  tft.drawLine(159, 0, 151, 0, COLOR_ACCENT_MAG);
-  tft.drawLine(159, 0, 159, 8, COLOR_ACCENT_MAG);
+  tft.drawLine(159, 0, 151, 0, COLOR_CYAN);
+  tft.drawLine(159, 0, 159, 8, COLOR_CYAN);
   
   // Bottom-left corner
-  tft.drawLine(0, 127, 8, 127, COLOR_ACCENT_MAG);
-  tft.drawLine(0, 127, 0, 119, COLOR_ACCENT_MAG);
+  tft.drawLine(0, 127, 8, 127, COLOR_CYAN);
+  tft.drawLine(0, 127, 0, 119, COLOR_CYAN);
   
   // Bottom-right corner
-  tft.drawLine(159, 127, 151, 127, COLOR_ACCENT_MAG);
-  tft.drawLine(159, 127, 159, 119, COLOR_ACCENT_MAG);
+  tft.drawLine(159, 127, 151, 127, COLOR_CYAN);
+  tft.drawLine(159, 127, 159, 119, COLOR_CYAN);
 }
 
 // ============================================================================
@@ -279,21 +288,21 @@ void drawInitialUI() {
   // Fill screen with pure black
   tft.fillScreen(COLOR_BLACK);
   
-  // ===== DRAW ICONS & SECTION BORDERS =====
+  // ===== DRAW CARD FRAMES & ICONS =====
   
   // REGION 1: TEMPERATURE (y: 0-42)
-  drawThermometerIcon(10, 8, COLOR_COLD);
-  drawRegionBorder(0, 42, COLOR_COLD);
+  drawCardFrame(0, 42);
+  drawThermometerIcon(8, 8, COLOR_COLD);
   
   // REGION 2: HUMIDITY (y: 42-84)
-  drawWaterDropletIcon(10, 50, COLOR_HUMIDITY);
-  drawRegionBorder(42, 84, COLOR_HUMIDITY);
+  drawCardFrame(42, 84);
+  drawWaterDropletIcon(8, 50, COLOR_CYAN);
   
   // REGION 3: FEELS LIKE (y: 84-128)
-  drawHeatIcon(10, 92, COLOR_COLD);
-  drawRegionBorder(84, 128, COLOR_COLD);
+  drawCardFrame(84, 128);
+  drawHeatIcon(8, 92, COLOR_COLD);
   
-  // ===== DRAW CORNER ACCENTS (Optional HUD feel) =====
+  // ===== DRAW CORNER ACCENTS (Cyan) =====
   drawCornerAccents();
   
   // ===== PLACEHOLDER VALUES =====
@@ -308,12 +317,14 @@ void updateTemperatureDisplay(float temp) {
   // Clear temperature region (rows 0-42)
   tft.fillRect(0, 0, 160, 42, COLOR_BLACK);
   
-  // Redraw borders and icon
-  drawThermometerIcon(10, 8, color);
-  drawRegionBorder(0, 42, color);
+  // Draw card frame (cyan border)
+  drawCardFrame(0, 42);
+  
+  // Draw thermometer icon
+  drawThermometerIcon(8, 8, color);
   
   // Draw large temperature value (text size 3)
-  tft.setCursor(35, 5);
+  tft.setCursor(40, 5);
   tft.setTextColor(color);
   tft.setTextSize(3);
   tft.printf("%.1f", temp);
@@ -323,27 +334,57 @@ void updateTemperatureDisplay(float temp) {
   tft.setTextColor(color);
   tft.setTextSize(2);
   tft.print("C");
+  
+  // Status label (COLD, COMFORT, HOT, etc.)
+  tft.setCursor(40, 28);
+  tft.setTextColor(COLOR_CYAN);
+  tft.setTextSize(1);
+  if (temp < 15) tft.print("COLD");
+  else if (temp < 18) tft.print("COOL");
+  else if (temp < 24) tft.print("COMFORT");
+  else if (temp < 30) tft.print("WARM");
+  else tft.print("HOT!");
+  
+  // Trend indicator (subtle up/down arrow at bottom)
+  if (temp > prev_temperature + 0.5) {
+    // Temperature rising
+    tft.drawLine(130, 36, 130, 32, COLOR_CYAN);  // Up arrow
+    tft.drawLine(127, 35, 130, 32, COLOR_CYAN);
+    tft.drawLine(133, 35, 130, 32, COLOR_CYAN);
+  } else if (temp < prev_temperature - 0.5) {
+    // Temperature falling
+    tft.drawLine(130, 32, 130, 36, COLOR_CYAN);  // Down arrow
+    tft.drawLine(127, 33, 130, 36, COLOR_CYAN);
+    tft.drawLine(133, 33, 130, 36, COLOR_CYAN);
+  }
 }
 
 void updateHumidityDisplay(float humidity) {
   // Clear humidity region (rows 42-84)
   tft.fillRect(0, 42, 160, 42, COLOR_BLACK);
   
-  // Redraw borders and icon
-  drawWaterDropletIcon(10, 50, COLOR_HUMIDITY);
-  drawRegionBorder(42, 84, COLOR_HUMIDITY);
+  // Draw card frame (cyan border)
+  drawCardFrame(42, 84);
+  
+  // Draw droplet icon
+  drawWaterDropletIcon(8, 50, COLOR_CYAN);
   
   // Draw large humidity value (text size 3)
-  tft.setCursor(35, 47);
-  tft.setTextColor(COLOR_HUMIDITY);
+  tft.setCursor(40, 47);
+  tft.setTextColor(COLOR_CYAN);
   tft.setTextSize(3);
   tft.printf("%.0f", humidity);
   
   // Draw percent symbol (text size 2)
   tft.setCursor(130, 50);
-  tft.setTextColor(COLOR_HUMIDITY);
+  tft.setTextColor(COLOR_CYAN);
   tft.setTextSize(2);
   tft.print("%");
+  
+  // Horizontal progress bar (humidity level)
+  int barWidth = (humidity / 100.0) * 145;
+  tft.drawRect(8, 72, 145, 4, COLOR_CYAN);           // Bar outline
+  tft.fillRect(8, 72, barWidth, 4, COLOR_CYAN);      // Fill based on %
 }
 
 void updateFeelsLikeDisplay(float feels_like) {
@@ -352,12 +393,14 @@ void updateFeelsLikeDisplay(float feels_like) {
   // Clear feels-like region (rows 84-128)
   tft.fillRect(0, 84, 160, 44, COLOR_BLACK);
   
-  // Redraw borders and icon
-  drawHeatIcon(10, 92, color);
-  drawRegionBorder(84, 128, color);
+  // Draw card frame (cyan border)
+  drawCardFrame(84, 128);
+  
+  // Draw heat icon
+  drawHeatIcon(8, 92, color);
   
   // Draw large feels-like value (text size 3)
-  tft.setCursor(35, 89);
+  tft.setCursor(40, 89);
   tft.setTextColor(color);
   tft.setTextSize(3);
   tft.printf("%.1f", feels_like);
@@ -367,6 +410,29 @@ void updateFeelsLikeDisplay(float feels_like) {
   tft.setTextColor(color);
   tft.setTextSize(2);
   tft.print("C");
+  
+  // Status label (based on feels-like temperature)
+  tft.setCursor(40, 110);
+  tft.setTextColor(COLOR_CYAN);
+  tft.setTextSize(1);
+  if (feels_like < 15) tft.print("COLD FEEL");
+  else if (feels_like < 18) tft.print("COOL FEEL");
+  else if (feels_like < 24) tft.print("COMFY");
+  else if (feels_like < 30) tft.print("WARM FEEL");
+  else tft.print("HOT FEEL!");
+  
+  // Trend indicator (subtle up/down arrow at bottom)
+  if (feels_like > prev_feels_like + 0.5) {
+    // Feels-like rising
+    tft.drawLine(130, 120, 130, 116, COLOR_CYAN);  // Up arrow
+    tft.drawLine(127, 119, 130, 116, COLOR_CYAN);
+    tft.drawLine(133, 119, 130, 116, COLOR_CYAN);
+  } else if (feels_like < prev_feels_like - 0.5) {
+    // Feels-like falling
+    tft.drawLine(130, 116, 130, 120, COLOR_CYAN);  // Down arrow
+    tft.drawLine(127, 117, 130, 120, COLOR_CYAN);
+    tft.drawLine(133, 117, 130, 120, COLOR_CYAN);
+  }
 }
 
 void displaySensorError() {
